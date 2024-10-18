@@ -1,7 +1,7 @@
 package util
 
 import (
-	"myProject/gin-blog/setting"
+	"gin-example/gin-blog/setting"
 
 	"github.com/gin-gonic/gin"
 	"github.com/unknwon/com"

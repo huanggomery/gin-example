@@ -7,7 +7,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	"myProject/gin-blog/setting"
+	"gin-example/gin-blog/setting"
 )
 
 var db *gorm.DB
