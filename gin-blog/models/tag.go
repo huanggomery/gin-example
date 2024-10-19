@@ -8,6 +8,7 @@ import (
 
 type Tag struct {
 	Model
+
 	Name       string `json:"name"`
 	CreatedBy  string `json:"created_by"`
 	ModifiedBy string `json:"modified_by"`
@@ -19,12 +20,13 @@ func (Tag) TableName() string {
 	return "blog_tag"
 }
 
-// 新增和修改前设置改动时间
+// 自动添加创建时间
 func (tag *Tag) BeforeCreate(tx *gorm.DB) error {
 	tx.Statement.SetColumn("created_on", int(time.Now().Unix()))
 	return nil
 }
 
+// 自动添加修改时间
 func (tag *Tag) BeforeUpdate(tx *gorm.DB) error {
 	tx.Statement.SetColumn("modified_on", int(time.Now().Unix()))
 	return nil

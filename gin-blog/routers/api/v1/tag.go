@@ -88,6 +88,7 @@ func EditTag(c *gin.Context) {
 
 	// 校验参数合法性
 	valid.Required(id, "id").Message("ID不能为空")
+	valid.Min(id, 1, "id").Message("ID必须大于0")
 	valid.MaxSize(name, 100, "name").Message("名称最长为100字符")
 	valid.Required(modifiedBy, "modified_by").Message("修改人不能为空")
 	valid.MaxSize(modifiedBy, 100, "modified_by").Message("修改人最长为100字符")
