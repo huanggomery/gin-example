@@ -1,6 +1,8 @@
 package routers
 
 import (
+	"gin-example/gin-blog/middleware"
+	"gin-example/gin-blog/routers/api"
 	v1 "gin-example/gin-blog/routers/api/v1"
 	"gin-example/gin-blog/setting"
 
@@ -12,7 +14,10 @@ func InitRouter() *gin.Engine {
 	r.Use(gin.Logger(), gin.Recovery())
 	gin.SetMode(setting.RunMode)
 
+	r.GET("/auth", api.GetAuth) // 提供用户名和密码，获取token
+
 	apiv1 := r.Group("api/v1")
+	apiv1.Use(middleware.JWT()) // 使用中间件校验token
 	{
 		// 获取标签列表
 		apiv1.GET("/tags", v1.GetTags)
