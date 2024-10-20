@@ -2,6 +2,7 @@ package api
 
 import (
 	"gin-example/gin-blog/e"
+	"gin-example/gin-blog/logging"
 	"gin-example/gin-blog/models"
 	"gin-example/gin-blog/util"
 	"net/http"
@@ -42,6 +43,10 @@ func GetAuth(c *gin.Context) {
 	} else {
 		// 参数错误
 		code = e.INVALID_PARAMS
+
+		for _, err := range valid.Errors {
+			logging.Info(err.Key, err.Message)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
