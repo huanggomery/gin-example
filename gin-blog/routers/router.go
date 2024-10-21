@@ -10,9 +10,9 @@ import (
 )
 
 func InitRouter() *gin.Engine {
+	gin.SetMode(setting.RunMode)
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
-	gin.SetMode(setting.RunMode)
 
 	r.GET("/auth", api.GetAuth) // 提供用户名和密码，获取token
 
