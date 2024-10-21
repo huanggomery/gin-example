@@ -2,6 +2,7 @@ package v1
 
 import (
 	"gin-example/gin-blog/e"
+	"gin-example/gin-blog/logging"
 	"gin-example/gin-blog/models"
 	"gin-example/gin-blog/setting"
 	"gin-example/gin-blog/util"
@@ -54,6 +55,9 @@ func AddTag(c *gin.Context) {
 	code := e.SUCCESS
 	if valid.HasErrors() {
 		// 参数错误
+		for _, err := range valid.Errors {
+			logging.Info(err.Key, err.Message)
+		}
 		code = e.INVALID_PARAMS
 	} else if models.ExistTagByName(name) {
 		// 参数正确，但标签已存在，无法新增

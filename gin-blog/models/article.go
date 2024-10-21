@@ -82,9 +82,16 @@ func EditArticle(id int, data map[string]interface{}) bool {
 	return true
 }
 
+// 软删除
 func DeleteArticle(id int) bool {
 	var article Article
 	article.ID = id
 	db.Delete(&article)
+	return true
+}
+
+// 硬删除
+func CleanAllArticles() bool {
+	db.Unscoped().Where("deleted_on != ?", 0).Delete(&Article{})
 	return true
 }

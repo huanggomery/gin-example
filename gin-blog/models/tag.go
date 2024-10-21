@@ -73,6 +73,7 @@ func AddTag(name string, state int, created_by string) bool {
 	return true
 }
 
+// 软删除
 func DeleteTag(id int) bool {
 	tag := Tag{}
 	tag.ID = id
@@ -82,5 +83,11 @@ func DeleteTag(id int) bool {
 
 func EditTag(id int, data interface{}) bool {
 	db.Model(&Tag{}).Where("id=?", id).Updates(data)
+	return true
+}
+
+// 硬删除
+func CleanAllTags() bool {
+	db.Unscoped().Where("deleted_on != ?", 0).Delete(&Tag{})
 	return true
 }
