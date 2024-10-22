@@ -10,7 +10,7 @@ import (
 )
 
 func InitRouter() *gin.Engine {
-	gin.SetMode(setting.RunMode)
+	gin.SetMode(setting.ServerSetting.RunMode)
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
 

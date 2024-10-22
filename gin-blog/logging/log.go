@@ -2,23 +2,17 @@ package logging
 
 import (
 	"fmt"
+	"gin-example/gin-blog/setting"
 	"log"
 	"runtime"
+)
 
-	"github.com/go-ini/ini"
+var (
+	logger   *log.Logger
+	loglevel LogLevelType
 )
 
 type LogLevelType int
-
-var (
-	Cfg         *ini.File
-	LogLevel    LogLevelType
-	LogSavePath string
-	LogSaveName string
-	LogFileExt  string
-	TimeFormat  string
-	logger      *log.Logger
-)
 
 // log level
 const (
@@ -31,52 +25,33 @@ const (
 
 var levelString = []string{"DEBUG", "INFO", "WARNING", "ERROR", "FATAL"}
 
-func init() {
-	var err error
-	Cfg, err = ini.Load("gin-blog/conf/app.ini")
-	if err != nil {
-		log.Fatalf("Fail to parse 'gin-blog/conf/app.ini': %v", err)
-	}
-
-	loadLog()
-
-	filepath := getLogFileFullPath()
-	file := openLogFile(filepath)
+func Setup() {
+	// 打开日志文件，初始化日志句柄
+	fileName := getLogFileName()
+	dirPath := getLogDirPath()
+	file := openLogFile(fileName, dirPath)
 	logger = log.New(file, "", log.Ldate|log.Lmicroseconds)
 
-}
-
-// 从ini文件加载日志参数
-func loadLog() {
-	sec, err := Cfg.GetSection("log")
-	if err != nil {
-		log.Fatalf("Fail to get section 'log': %v", err)
-	}
-
-	level := sec.Key("LOG_LEVEL").MustString("DEBUG")
-	switch level {
+	// 设置日志级别
+	switch setting.LogSetting.LogLeval {
 	case "DEBUG":
-		LogLevel = DEBUG
+		loglevel = DEBUG
 	case "INFO":
-		LogLevel = INFO
+		loglevel = INFO
 	case "WARNING":
-		LogLevel = WARNING
+		loglevel = WARNING
 	case "ERROR":
-		LogLevel = ERROR
+		loglevel = ERROR
 	case "FATAL":
-		LogLevel = FATAL
+		loglevel = FATAL
 	default:
-		log.Fatalf("invalid log level: %s", level)
+		log.Fatalf("invalid log level: %s", setting.LogSetting.LogLeval)
 	}
-	LogSavePath = sec.Key("LOG_SAVE_PATH").MustString("runtime/logs/")
-	LogSaveName = sec.Key("LOG_SAVE_NAME").MustString("log")
-	LogFileExt = sec.Key("LOG_FILE_EXT").MustString("log")
-	TimeFormat = sec.Key("TIME_FORMAT").MustString("20200810")
 }
 
 // 检查日志级别并设置前缀
 func setPrefix(level LogLevelType) bool {
-	if level < LogLevel {
+	if level < loglevel {
 		return false
 	}
 

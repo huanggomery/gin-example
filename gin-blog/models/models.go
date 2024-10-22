@@ -20,30 +20,30 @@ type Model struct {
 	DeletedOn  soft_delete.DeletedAt `json:"deleted_on"`
 }
 
-func init() {
-	// TODO: unsafe, setting.Cfg is also initialized in init() function
-	sec, err := setting.Cfg.GetSection("database")
-	if err != nil {
-		log.Fatal(2, "Fail to get section 'database': %v", err)
-	}
+// 读取setting模块配置，连接数据库
+func Setup() {
+	dsn := fmt.Sprintf(
+		"%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		setting.DatabaseSetting.User,
+		setting.DatabaseSetting.Password,
+		setting.DatabaseSetting.Host,
+		setting.DatabaseSetting.DbName,
+	)
 
-	// dbType := sec.Key("TYPE").String()
-	dbName := sec.Key("NAME").String()
-	user := sec.Key("USER").String()
-	password := sec.Key("PASSWORD").String()
-	host := sec.Key("HOST").String()
-	// tablePrefix := sec.Key("TABLE_PREFIX").String()
-
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, password, host, dbName)
+	// 连接到数据库
+	var err error
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	// 设置最大连接数
 	mysqlDB, _ := db.DB()
 	// SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
 	mysqlDB.SetMaxIdleConns(10)
-
 	// SetMaxOpenConns sets the maximum number of open connections to the database.
 	mysqlDB.SetMaxOpenConns(100)
 }

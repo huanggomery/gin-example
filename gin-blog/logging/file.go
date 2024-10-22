@@ -2,39 +2,51 @@ package logging
 
 import (
 	"fmt"
+	"gin-example/gin-blog/file"
+	"gin-example/gin-blog/setting"
 	"log"
 	"os"
 	"path"
 	"time"
 )
 
-func getLogFileFullPath() string {
-	prefixName := LogSavePath
-	suffixName := fmt.Sprintf("%s%s.%s", LogSaveName, time.Now().Format(TimeFormat), LogFileExt)
-	return fmt.Sprintf("%s%s", prefixName, suffixName)
+// 获取日志文件的文件夹路径 （例如 runtime/logs/）
+func getLogDirPath() string {
+	return fmt.Sprintf("%s%s", setting.AppSetting.RuntimeRootPath, setting.LogSetting.LogSavePath)
 }
 
-func openLogFile(filePath string) *os.File {
-	_, err := os.Stat(filePath)
-	switch {
-	case os.IsNotExist(err):
-		mkDir()
-	case os.IsPermission(err):
-		log.Fatalf("Permission: %v\n", err)
-	}
-
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatalf("Fail to OpenFile: %v\n", err)
-	}
-
-	return file
+// 获取日志文件的文件名 （例如 log20241022.log）
+func getLogFileName() string {
+	fileName := fmt.Sprintf(
+		"%s%s.%s",
+		setting.LogSetting.LogSaveName,
+		time.Now().Format(setting.LogSetting.TimeFormat),
+		setting.LogSetting.LogFileExt,
+	)
+	return fileName
 }
 
-func mkDir() {
-	dir, _ := os.Getwd()
-	err := os.MkdirAll(path.Join(dir, LogSavePath), os.ModePerm)
+// 打开日志文件，如果没有则创建文件并打开。发生异常会终止进程
+func openLogFile(fileName, dirPath string) *os.File {
+	dir, err := os.Getwd()
 	if err != nil {
 		panic(err)
 	}
+	dirPath = path.Join(dir, dirPath)
+	if !file.CheckPermission(dirPath) {
+		log.Fatalf("Permission: %v", err)
+	}
+	if !file.CheckExist(dirPath) {
+		if err = file.Mkdir(dirPath); err != nil {
+			log.Fatalf("Mkdir: %v", err)
+		}
+	}
+
+	filePath := path.Join(dirPath, fileName)
+	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("Fail to OpenFile: %v", err)
+	}
+
+	return file
 }

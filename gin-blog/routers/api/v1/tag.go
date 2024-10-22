@@ -29,7 +29,7 @@ func GetTags(c *gin.Context) {
 		maps["state"] = state
 	}
 
-	data["lists"] = models.GetTags(util.GetPage(c), setting.PageSize, maps)
+	data["lists"] = models.GetTags(util.GetPage(c), setting.AppSetting.PageSize, maps)
 	data["count"] = models.GetTagCount(maps)
 
 	c.JSON(http.StatusOK, gin.H{

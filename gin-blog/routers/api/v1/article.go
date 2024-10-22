@@ -73,7 +73,7 @@ func GetArticles(c *gin.Context) {
 
 	if !valid.HasErrors() {
 		// 参数正确，正常查询
-		data["lists"] = models.GetArticles(util.GetPage(c), setting.PageSize, maps)
+		data["lists"] = models.GetArticles(util.GetPage(c), setting.AppSetting.PageSize, maps)
 		data["count"] = models.GetArticleCount(maps)
 		code = e.SUCCESS
 	} else {

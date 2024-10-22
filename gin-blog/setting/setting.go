@@ -9,52 +9,75 @@ import (
 	"github.com/go-ini/ini"
 )
 
-var (
-	Cfg *ini.File
+type App struct {
+	PageSize        int
+	JwtSecret       string
+	RuntimeRootPath string
 
-	RunMode string
+	ImagePrefixUrl string
+	ImageSavePath  string
+	ImageMaxSize   int
+	ImageAllowExts []string
+}
 
+var AppSetting App
+
+type Server struct {
+	RunMode      string
 	HttpPort     int
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
+}
 
-	PageSize  int
-	JwtSecret string
-)
+var ServerSetting Server
 
-func init() {
-	var err error
-	Cfg, err = ini.Load("gin-blog/conf/app.ini")
+type Database struct {
+	Type     string
+	User     string
+	Password string
+	Host     string
+	DbName   string
+}
+
+var DatabaseSetting Database
+
+type Log struct {
+	LogLeval    string
+	LogSavePath string
+	LogSaveName string
+	LogFileExt  string
+	TimeFormat  string
+}
+
+var LogSetting Log
+
+// 读取配置文件，填充配置项的结构体
+func Setup() {
+	Cfg, err := ini.Load("gin-blog/conf/app.ini")
 	if err != nil {
 		log.Fatalf("Fail to parse 'gin-blog/conf/app.ini': %v", err)
 	}
 
-	LoadBase()
-	LoadServer()
-	LoadApp()
-}
-
-func LoadBase() {
-	RunMode = Cfg.Section("").Key("RUN_MODE").MustString("debug")
-}
-
-func LoadServer() {
-	sec, err := Cfg.GetSection("server")
+	err = Cfg.Section("app").MapTo(&AppSetting)
 	if err != nil {
-		log.Fatalf("Fail to get section 'server': %v", err)
+		log.Fatalf("Cfg.MapTo AppSetting error: %v", err)
+	}
+	AppSetting.ImageMaxSize *= (1024 * 1024) // MB -> Byte
+
+	err = Cfg.Section("server").MapTo(&ServerSetting)
+	if err != nil {
+		log.Fatalf("Cfg.MapTo ServerSetting error: %v", err)
+	}
+	ServerSetting.ReadTimeout *= time.Second
+	ServerSetting.WriteTimeout *= time.Second
+
+	err = Cfg.Section("database").MapTo(&DatabaseSetting)
+	if err != nil {
+		log.Fatalf("Cfg.MapTo DatabaseSetting error: %v", err)
 	}
 
-	HttpPort = sec.Key("HTTP_PORT").MustInt(8000)
-	ReadTimeout = time.Duration(sec.Key("READ_TIMEOUT").MustInt(60)) * time.Second
-	WriteTimeout = time.Duration(sec.Key("WRITE_TIMEOUT").MustInt(60)) * time.Second
-}
-
-func LoadApp() {
-	sec, err := Cfg.GetSection("app")
+	err = Cfg.Section("log").MapTo(&LogSetting)
 	if err != nil {
-		log.Fatalf("Fail to get section 'app': %v", err)
+		log.Fatalf("Cfg.MapTo LogSetting error: %v", err)
 	}
-
-	PageSize = sec.Key("PAGE_SIZE").MustInt(10)
-	JwtSecret = sec.Key("JWT_SECRET").MustString("123456")
 }
