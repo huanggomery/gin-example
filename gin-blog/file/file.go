@@ -1,17 +1,19 @@
 package file
 
 import (
+	"io"
+	"mime/multipart"
 	"os"
 	"path"
 )
 
 // 活得文件内容字节数
-func GetSize(filePath string) (int, error) {
-	info, err := os.Stat(filePath)
+func GetSize(file multipart.File) (int, error) {
+	content, err := io.ReadAll(file)
 	if err != nil {
 		return 0, err
 	}
-	return int(info.Size()), nil
+	return len(content), nil
 }
 
 // 获取后缀名，如果没有的话返回空字符串

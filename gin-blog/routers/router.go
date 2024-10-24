@@ -5,6 +5,7 @@ import (
 	"gin-example/gin-blog/routers/api"
 	v1 "gin-example/gin-blog/routers/api/v1"
 	"gin-example/gin-blog/setting"
+	"gin-example/gin-blog/upload"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,7 +15,9 @@ func InitRouter() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
 
-	r.GET("/auth", api.GetAuth) // 提供用户名和密码，获取token
+	r.Static("/"+setting.AppSetting.ImageSavePath, upload.GetImageFullDir())
+	r.GET("/auth", api.GetAuth)        // 提供用户名和密码，获取token
+	r.POST("/upload", api.UploadImage) // 用户上传图片
 
 	apiv1 := r.Group("api/v1")
 	apiv1.Use(middleware.JWT()) // 使用中间件校验token
