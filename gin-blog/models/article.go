@@ -1,97 +1,97 @@
 package models
 
 import (
-	"time"
+    "time"
 
-	"gorm.io/gorm"
+    "gorm.io/gorm"
 )
 
 type Article struct {
-	Model
+    Model
 
-	TagID int `json:"tag_id" gorm:"index"`
-	Tag   Tag `json:"tag"`
+    TagID int `json:"tag_id" gorm:"index"`
+    Tag   Tag `json:"tag"`
 
-	Title      string `json:"title"`
-	Desc       string `json:"describe"`
-	Content    string `json:"content"`
-	CreatedBy  string `json:"created_by"`
-	ModifiedBy string `json:"modified_by"`
-	State      int    `json:"state"`
+    Title      string `json:"title"`
+    Desc       string `json:"describe"`
+    Content    string `json:"content"`
+    CreatedBy  string `json:"created_by"`
+    ModifiedBy string `json:"modified_by"`
+    State      int    `json:"state"`
 }
 
 // 结构体 Article -> 表 blog_article
 func (Article) TableName() string {
-	return "blog_article"
+    return "blog_article"
 }
 
 // 自动添加创建时间
 func (article *Article) BeforeCreate(tx *gorm.DB) error {
-	tx.Statement.SetColumn("created_on", int(time.Now().Unix()))
-	return nil
+    tx.Statement.SetColumn("created_on", int(time.Now().Unix()))
+    return nil
 }
 
 // 自动添加修改时间
 func (article *Article) BeforeUpdate(tx *gorm.DB) error {
-	tx.Statement.SetColumn("modified_on", int(time.Now().Unix()))
-	return nil
+    tx.Statement.SetColumn("modified_on", int(time.Now().Unix()))
+    return nil
 }
 
 func ExistArticleByID(id int) bool {
-	var article Article
-	db.Select("id").Where("id=?", id).First(&article)
-	if article.ID > 0 {
-		return true
-	} else {
-		return false
-	}
+    var article Article
+    db.Select("id").Where("id=?", id).First(&article)
+    if article.ID > 0 {
+        return true
+    } else {
+        return false
+    }
 }
 
 func GetArticle(id int) (result Article) {
-	db.Preload("Tag").Where("id=?", id).First(&result)
-	return
+    db.Preload("Tag").Where("id=?", id).First(&result)
+    return
 }
 
 func GetArticles(pageNum int, pageSize int, maps interface{}) (results []Article) {
-	db.Preload("Tag").Where(maps).Offset(pageNum).Limit(pageSize).Find(&results)
-	return
+    db.Preload("Tag").Where(maps).Offset(pageNum).Limit(pageSize).Find(&results)
+    return
 }
 
 func GetArticleCount(maps interface{}) int {
-	var count int64
-	db.Model(&Article{}).Where(maps).Count(&count)
-	return int(count)
+    var count int64
+    db.Model(&Article{}).Where(maps).Count(&count)
+    return int(count)
 }
 
 func AddArticle(data map[string]interface{}) bool {
-	article := Article{
-		TagID:     data["tag_id"].(int),
-		Title:     data["title"].(string),
-		Desc:      data["desc"].(string),
-		Content:   data["content"].(string),
-		CreatedBy: data["created_by"].(string),
-		State:     data["state"].(int),
-	}
-	db.Create(&article)
+    article := Article{
+        TagID:     data["tag_id"].(int),
+        Title:     data["title"].(string),
+        Desc:      data["desc"].(string),
+        Content:   data["content"].(string),
+        CreatedBy: data["created_by"].(string),
+        State:     data["state"].(int),
+    }
+    db.Create(&article)
 
-	return true
+    return true
 }
 
 func EditArticle(id int, data map[string]interface{}) bool {
-	db.Model(&Article{}).Where("id=?", id).Updates(data)
-	return true
+    db.Model(&Article{}).Where("id=?", id).Updates(data)
+    return true
 }
 
 // 软删除
 func DeleteArticle(id int) bool {
-	var article Article
-	article.ID = id
-	db.Delete(&article)
-	return true
+    var article Article
+    article.ID = id
+    db.Delete(&article)
+    return true
 }
 
 // 硬删除
 func CleanAllArticles() bool {
-	db.Unscoped().Where("deleted_on != ?", 0).Delete(&Article{})
-	return true
+    db.Unscoped().Where("deleted_on != ?", 0).Delete(&Article{})
+    return true
 }

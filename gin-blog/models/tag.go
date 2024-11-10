@@ -1,93 +1,93 @@
 package models
 
 import (
-	"time"
+    "time"
 
-	"gorm.io/gorm"
+    "gorm.io/gorm"
 )
 
 type Tag struct {
-	Model
+    Model
 
-	Name       string `json:"name"`
-	CreatedBy  string `json:"created_by"`
-	ModifiedBy string `json:"modified_by"`
-	State      int    `json:"state"`
+    Name       string `json:"name"`
+    CreatedBy  string `json:"created_by"`
+    ModifiedBy string `json:"modified_by"`
+    State      int    `json:"state"`
 }
 
 // 结构体 Tag -> 表 blog_tag
 func (Tag) TableName() string {
-	return "blog_tag"
+    return "blog_tag"
 }
 
 // 自动添加创建时间
 func (tag *Tag) BeforeCreate(tx *gorm.DB) error {
-	tx.Statement.SetColumn("created_on", int(time.Now().Unix()))
-	return nil
+    tx.Statement.SetColumn("created_on", int(time.Now().Unix()))
+    return nil
 }
 
 // 自动添加修改时间
 func (tag *Tag) BeforeUpdate(tx *gorm.DB) error {
-	tx.Statement.SetColumn("modified_on", int(time.Now().Unix()))
-	return nil
+    tx.Statement.SetColumn("modified_on", int(time.Now().Unix()))
+    return nil
 }
 
 func GetTags(pageNum int, pageSize int, maps interface{}) (results []Tag) {
-	db.Where(maps).Offset(pageNum).Limit(pageSize).Find(&results)
-	return
+    db.Where(maps).Offset(pageNum).Limit(pageSize).Find(&results)
+    return
 }
 
 func GetTagCount(maps interface{}) int {
-	var count int64
-	db.Model(&Tag{}).Where(maps).Count(&count)
-	return int(count)
+    var count int64
+    db.Model(&Tag{}).Where(maps).Count(&count)
+    return int(count)
 }
 
 func ExistTagByName(name string) bool {
-	var tag Tag
-	db.Select("id").Where("name=?", name).First(&tag)
-	if tag.ID > 0 {
-		return true
-	} else {
-		return false
-	}
+    var tag Tag
+    db.Select("id").Where("name=?", name).First(&tag)
+    if tag.ID > 0 {
+        return true
+    } else {
+        return false
+    }
 }
 
 func ExistTagByID(id int) bool {
-	var tag Tag
-	db.Select("id").Where("id=?", id).First(&tag)
-	if tag.ID > 0 {
-		return true
-	} else {
-		return false
-	}
+    var tag Tag
+    db.Select("id").Where("id=?", id).First(&tag)
+    if tag.ID > 0 {
+        return true
+    } else {
+        return false
+    }
 }
 
 func AddTag(name string, state int, created_by string) bool {
-	tag := Tag{
-		Name:      name,
-		CreatedBy: created_by,
-		State:     state,
-	}
-	db.Create(&tag)
-	return true
+    tag := Tag{
+        Name:      name,
+        CreatedBy: created_by,
+        State:     state,
+    }
+    db.Create(&tag)
+    return true
 }
 
 // 软删除
 func DeleteTag(id int) bool {
-	tag := Tag{}
-	tag.ID = id
-	db.Delete(&tag)
-	return true
+    tag := Tag{}
+    tag.ID = id
+    db.Delete(&tag)
+    return true
 }
 
 func EditTag(id int, data interface{}) bool {
-	db.Model(&Tag{}).Where("id=?", id).Updates(data)
-	return true
+    db.Model(&Tag{}).Where("id=?", id).Updates(data)
+    return true
 }
 
 // 硬删除
 func CleanAllTags() bool {
-	db.Unscoped().Where("deleted_on != ?", 0).Delete(&Tag{})
-	return true
+    db.Unscoped().Where("deleted_on != ?", 0).Delete(&Tag{})
+    return true
 }
