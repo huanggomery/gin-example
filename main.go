@@ -6,6 +6,7 @@ import (
     "gin-example/gin-blog/models"
     "gin-example/gin-blog/routers"
     "gin-example/gin-blog/setting"
+    "gin-example/gredis"
     "log"
     "syscall"
 
@@ -16,6 +17,7 @@ func init() {
     setting.Setup()
     logging.Setup()
     models.Setup()
+    gredis.Setup()
 }
 
 func main() {
