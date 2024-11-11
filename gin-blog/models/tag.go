@@ -1,6 +1,7 @@
 package models
 
 import (
+    "errors"
     "time"
 
     "gorm.io/gorm"
@@ -30,6 +31,15 @@ func (tag *Tag) BeforeCreate(tx *gorm.DB) error {
 func (tag *Tag) BeforeUpdate(tx *gorm.DB) error {
     tx.Statement.SetColumn("modified_on", int(time.Now().Unix()))
     return nil
+}
+
+func GetTagByID(id int) (Tag, error) {
+    var tag Tag
+    db.Where("id=?", id).Find(&tag)
+    if tag.ID <= 0 {
+        return tag, errors.New("don't exist")
+    }
+    return tag, nil
 }
 
 func GetTags(pageNum int, pageSize int, maps interface{}) (results []Tag) {

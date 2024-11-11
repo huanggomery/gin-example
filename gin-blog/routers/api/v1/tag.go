@@ -4,6 +4,8 @@ import (
     "gin-example/gin-blog/e"
     "gin-example/gin-blog/logging"
     "gin-example/gin-blog/models"
+    "gin-example/gin-blog/routers/api"
+    "gin-example/gin-blog/service"
     "gin-example/gin-blog/setting"
     "gin-example/gin-blog/util"
     "net/http"
@@ -16,27 +18,32 @@ import (
 // 获取多个文章标签
 func GetTags(c *gin.Context) {
     name := c.Query("name")
-
-    maps := make(map[string]interface{})
-    data := make(map[string]interface{})
-
-    if name != "" {
-        maps["name"] = name
-    }
+    state := -1
 
     if arg := c.Query("state"); arg != "" {
-        state := com.StrTo(arg).MustInt()
-        maps["state"] = state
+        state = com.StrTo(arg).MustInt()
     }
 
-    data["lists"] = models.GetTags(util.GetPage(c), setting.AppSetting.PageSize, maps)
-    data["count"] = models.GetTagCount(maps)
+    tagService := service.TagService{
+        Name:     name,
+        State:    state,
+        PageNum:  util.GetPage(c),
+        PageSize: setting.AppSetting.PageSize,
+    }
 
-    c.JSON(http.StatusOK, gin.H{
-        "code": e.SUCCESS,
-        "msg":  e.GetMsg(e.SUCCESS),
-        "data": data,
-    })
+    tags, err := tagService.GetAll()
+    if err != nil {
+        api.Response(c, http.StatusInternalServerError, e.ERROR, nil)
+        return
+    }
+    count := tagService.Count()
+
+    data := map[string]interface{}{
+        "list":  tags,
+        "count": count,
+    }
+
+    api.Response(c, http.StatusOK, e.SUCCESS, data)
 }
 
 // 新增文章标签
@@ -52,27 +59,31 @@ func AddTag(c *gin.Context) {
     valid.MaxSize(createdBy, 100, "created_by").Message("创建人最长为100字符")
     valid.Range(state, 0, 1, "state").Message("状态只允许0或1")
 
-    code := e.SUCCESS
     if valid.HasErrors() {
         // 参数错误
-        for _, err := range valid.Errors {
-            logging.Info(err.Key, err.Message)
-        }
-        code = e.INVALID_PARAMS
-    } else if models.ExistTagByName(name) {
+        api.LogErrors(valid.Errors)
+        api.Response(c, http.StatusOK, e.INVALID_PARAMS, nil)
+        return
+    }
+    if models.ExistTagByName(name) {
         // 参数正确，但标签已存在，无法新增
-        code = e.ERROR_EXIST_TAG
+        api.Response(c, http.StatusOK, e.ERROR_EXIST_TAG, nil)
+        return
     }
 
-    if code == e.SUCCESS {
-        // 只有一切正常，才向表中新增标签
-        models.AddTag(name, state, createdBy)
+    // 只有一切正常，才向表中新增标签
+    tagService := service.TagService{
+        Name:      name,
+        State:     state,
+        CreatedBy: createdBy,
     }
-    c.JSON(http.StatusOK, gin.H{
-        "code": code,
-        "msg":  e.GetMsg(code),
-        "data": make(map[string]string),
-    })
+    if err := tagService.Add(); err != nil {
+        logging.Error(err)
+        api.Response(c, http.StatusInternalServerError, e.ERROR, nil)
+        return
+    }
+
+    api.Response(c, http.StatusOK, e.SUCCESS, nil)
 }
 
 // 修改文章标签
@@ -97,34 +108,34 @@ func EditTag(c *gin.Context) {
     valid.Required(modifiedBy, "modified_by").Message("修改人不能为空")
     valid.MaxSize(modifiedBy, 100, "modified_by").Message("修改人最长为100字符")
 
-    var code int
-    if !valid.HasErrors() {
-        if models.ExistTagByID(id) {
-            // 标签存在，可以修改
-            data := make(map[string]interface{})
-            data["modified_by"] = modifiedBy
-            if name != "" {
-                data["name"] = name
-            }
-            if state != -1 {
-                data["state"] = state
-            }
-            models.EditTag(id, data)
-            code = e.SUCCESS
-        } else {
-            // 标签不存在
-            code = e.ERROR_NOT_EXIST_TAG
-        }
-    } else {
-        // 参数错误
-        code = e.INVALID_PARAMS
+    // 参数错误
+    if valid.HasErrors() {
+        api.LogErrors(valid.Errors)
+        api.Response(c, http.StatusOK, e.INVALID_PARAMS, nil)
+        return
     }
 
-    c.JSON(http.StatusOK, gin.H{
-        "code": code,
-        "msg":  e.GetMsg(code),
-        "data": make(map[string]string),
-    })
+    tagService := service.TagService{
+        ID:         id,
+        Name:       name,
+        State:      state,
+        ModifiedBy: modifiedBy,
+    }
+
+    // 标签不存在
+    if !tagService.ExistById() {
+        api.Response(c, http.StatusOK, e.ERROR_NOT_EXIST_TAG, nil)
+        return
+    }
+
+    // 标签存在，可以修改
+    if err := tagService.Edit(); err != nil {
+        logging.Error(err)
+        api.Response(c, http.StatusInternalServerError, e.ERROR, nil)
+        return
+    }
+
+    api.Response(c, http.StatusOK, e.SUCCESS, nil)
 }
 
 // 删除文章标签
@@ -133,24 +144,28 @@ func DeleteTag(c *gin.Context) {
     valid := validation.Validation{}
     valid.Min(id, 1, "id").Message("ID必须大于0")
 
-    var code int
-    if !valid.HasErrors() {
-        if models.ExistTagByID(id) {
-            // 标签存在，可以删除
-            models.DeleteTag(id)
-            code = e.SUCCESS
-        } else {
-            // 标签不存在
-            code = e.ERROR_NOT_EXIST_TAG
-        }
-    } else {
-        // 参数错误
-        code = e.INVALID_PARAMS
+    if valid.HasErrors() {
+        api.LogErrors(valid.Errors)
+        api.Response(c, http.StatusOK, e.INVALID_PARAMS, nil)
+        return
     }
 
-    c.JSON(http.StatusOK, gin.H{
-        "code": code,
-        "msg":  e.GetMsg(code),
-        "data": make(map[string]string),
-    })
+    tagService := service.TagService{
+        ID: id,
+    }
+
+    // 标签不存在
+    if !tagService.ExistById() {
+        api.Response(c, http.StatusOK, e.ERROR_NOT_EXIST_TAG, nil)
+        return
+    }
+
+    // 标签存在，可以删除
+    if err := tagService.Delete(); err != nil {
+        logging.Error(err)
+        api.Response(c, http.StatusInternalServerError, e.ERROR, nil)
+        return
+    }
+
+    api.Response(c, http.StatusOK, e.SUCCESS, nil)
 }
