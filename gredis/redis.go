@@ -6,6 +6,7 @@ import (
     "gin-example/gin-blog/setting"
     "github.com/redis/go-redis/v9"
     "log"
+    "strings"
     "time"
 )
 
@@ -47,6 +48,16 @@ func Exists(key string) bool {
     return true
 }
 
+func LikeExists(key ...string) bool {
+    keys := strings.Join(key, "*")
+    keys = "*" + keys + "*"
+    keyList, err := rdb.Keys(ctx, keys).Result()
+    if err != nil {
+        return false
+    }
+    return len(keyList) > 0
+}
+
 func Get(key string) (string, error) {
     val, err := rdb.Get(ctx, key).Result()
     return val, err
@@ -56,12 +67,14 @@ func Del(key string) error {
     return rdb.Del(ctx, key).Err()
 }
 
-func LikeDel(key string) error {
-    keys, err := rdb.Keys(ctx, "*"+key+"*").Result()
+func LikeDel(key ...string) error {
+    keys := strings.Join(key, "*")
+    keys = "*" + keys + "*"
+    keyList, err := rdb.Keys(ctx, keys).Result()
     if err != nil {
         return err
     }
-    for _, k := range keys {
+    for _, k := range keyList {
         err = rdb.Del(ctx, k).Err()
         if err != nil {
             return err

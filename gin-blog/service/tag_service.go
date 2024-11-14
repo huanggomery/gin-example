@@ -133,11 +133,11 @@ func (t *TagService) Add() error {
 
     // 删除缓存
     if t.State == 0 {
-        gredis.LikeDel("off")
+        gredis.LikeDel(e.CACHE_TAG, "off")
     } else if t.State == 1 {
-        gredis.LikeDel("on")
+        gredis.LikeDel(e.CACHE_TAG, "on")
     }
-    gredis.LikeDel(t.Name)
+    gredis.LikeDel(e.CACHE_TAG, t.Name)
 
     return nil
 }
@@ -163,11 +163,11 @@ func (t *TagService) Edit() error {
 
     // 删除缓存
     if t.State == 0 {
-        gredis.LikeDel("off")
+        gredis.LikeDel(e.CACHE_TAG, "off")
     } else if t.State == 1 {
-        gredis.LikeDel("on")
+        gredis.LikeDel(e.CACHE_TAG, "on")
     }
-    gredis.LikeDel(tag.Name)
+    gredis.LikeDel(e.CACHE_TAG, tag.Name)
 
     return nil
 }
@@ -181,11 +181,11 @@ func (t *TagService) Delete() error {
 
     // 删除缓存
     if tag.State == 0 {
-        gredis.LikeDel("off")
+        gredis.LikeDel(e.CACHE_TAG, "off")
     } else if tag.State == 1 {
-        gredis.LikeDel("on")
+        gredis.LikeDel(e.CACHE_TAG, "on")
     }
-    gredis.LikeDel(tag.Name)
+    gredis.LikeDel(e.CACHE_TAG, tag.Name)
 
     return nil
 }
