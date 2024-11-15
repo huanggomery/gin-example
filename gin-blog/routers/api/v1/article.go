@@ -31,6 +31,7 @@ func GetArticle(c *gin.Context) {
     article, err := articleService.Get()
     if err != nil {
         api.Response(c, http.StatusOK, err.Code(), nil)
+        return
     }
 
     api.Response(c, http.StatusOK, e.SUCCESS, article)
